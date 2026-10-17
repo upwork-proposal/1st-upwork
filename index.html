@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privesa — Concept Study</title>
+<meta name="description" content="Concept study: a cinematic, scroll-driven marketing experience for Privesa.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<style>
+  :root{
+    --charcoal:#0b0c0e; --ink:#111317; --navy:#1a2230;
+    --ivory:#eee8dc; --warm:#f6f2ea; --muted:#9c968b; --gold:#c9b37e; --gold-dim:rgba(201,179,126,.35);
+    --serif:"Cormorant Garamond", Georgia, serif; --sans:"Montserrat", system-ui, sans-serif;
+    --gutter:clamp(20px,5vw,72px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--charcoal)}
+  body{background:var(--charcoal);color:var(--ivory);font-family:var(--sans);font-weight:300;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  ::selection{background:var(--gold);color:var(--charcoal)}
+
+  /* stage */
+  #stage{position:fixed;inset:0;z-index:0;background:radial-gradient(120% 80% at 70% 60%,#1a2230 0%,#0b0c0e 60%)}
+  #stage canvas{display:block;width:100%;height:100%}
+  .veil{position:fixed;inset:0;pointer-events:none;z-index:1}
+  .vignette{background:radial-gradient(120% 90% at 50% 50%,transparent 45%,rgba(5,6,8,.55) 75%,rgba(5,6,8,.92) 100%)}
+  .shade-left{background:linear-gradient(90deg,rgba(8,9,11,.78) 0%,rgba(8,9,11,.35) 38%,transparent 62%);opacity:1;transition:opacity .2s}
+  .grain{opacity:.07;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");animation:grain 1s steps(6) infinite}
+  @keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
+  #dip{background:#050608;opacity:0}
+
+  /* chrome */
+  header{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:26px var(--gutter);mix-blend-mode:normal}
+  .mark{font-family:var(--serif);font-weight:400;letter-spacing:.42em;font-size:15px;color:var(--warm);text-decoration:none}
+  nav{display:flex;gap:38px;align-items:center}
+  nav a{color:var(--ivory);opacity:.72;text-decoration:none;font-size:11px;letter-spacing:.22em;text-transform:uppercase;transition:opacity .4s}
+  nav a:hover{opacity:1}
+  .btn{display:inline-flex;align-items:center;gap:12px;border:1px solid var(--gold-dim);color:var(--warm);padding:12px 20px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;text-decoration:none;transition:border-color .5s,background .5s,color .5s;background:rgba(11,12,14,.25);backdrop-filter:blur(6px)}
+  .btn:hover{border-color:var(--gold);background:var(--gold);color:var(--charcoal)}
+  .btn .ln{width:18px;height:1px;background:currentColor;opacity:.8}
+  .rail{position:fixed;right:var(--gutter);top:50%;transform:translateY(-50%);z-index:10;display:flex;flex-direction:column;gap:18px}
+  .rail button{all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;justify-content:flex-end;font-size:10px;letter-spacing:.2em;color:var(--ivory);opacity:.35;transition:opacity .5s}
+  .rail button .tick{width:14px;height:1px;background:var(--ivory);transition:width .6s,background .6s}
+  .rail button.on{opacity:1}
+  .rail button.on .tick{width:38px;background:var(--gold)}
+  .meta{position:fixed;left:var(--gutter);bottom:26px;z-index:10;font-size:10px;letter-spacing:.24em;color:var(--muted);text-transform:uppercase;display:flex;gap:28px}
+  .meta b{font-weight:400;color:var(--ivory)}
+
+  /* chapters */
+  main{position:relative;z-index:5}
+  section{position:relative;min-height:100vh;display:flex;align-items:center;padding:0 var(--gutter)}
+  section.tall{min-height:150vh;align-items:flex-start}
+  section.tall .sticky{position:sticky;top:0;height:100vh;display:flex;align-items:center;width:100%}
+  .copy{max-width:560px}
+  .right .copy{margin-left:auto;margin-right:clamp(40px,8vw,140px)}
+  .eyebrow{display:flex;align-items:center;gap:16px;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:34px}
+  .eyebrow i{display:block;width:44px;height:1px;background:var(--gold)}
+  h1,h2{font-family:var(--serif);font-weight:300;color:var(--warm);letter-spacing:-.01em}
+  h1{font-size:clamp(52px,7.6vw,118px);line-height:.98}
+  h2{font-size:clamp(40px,5vw,78px);line-height:1.02}
+  h1 em,h2 em{font-style:italic;color:var(--ivory)}
+  .line{display:block;overflow:hidden;padding-bottom:.06em}
+  .line>span{display:block;will-change:transform}
+  p.lede{margin-top:32px;font-size:clamp(14px,1.05vw,16px);line-height:1.85;color:#cfc9bd;max-width:440px}
+  .cue{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:14px;font-size:10px;letter-spacing:.3em;color:var(--muted);text-transform:uppercase}
+  .cue span{display:block;width:1px;height:54px;background:linear-gradient(var(--gold),transparent);transform-origin:top;animation:cue 2.4s ease-in-out infinite}
+  @keyframes cue{0%{transform:scaleY(0)}50%{transform:scaleY(1)}100%{transform:scaleY(1);opacity:0}}
+  .stat-row{display:flex;gap:48px;margin-top:46px}
+  .stat b{display:block;font-family:var(--serif);font-weight:300;font-size:46px;color:var(--warm);line-height:1}
+  .stat small{display:block;margin-top:10px;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+
+  /* product */
+  .product{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(30px,5vw,90px);align-items:center;width:100%}
+  .panel{background:linear-gradient(180deg,rgba(18,20,25,.82),rgba(12,13,16,.9));border:1px solid rgba(238,232,220,.08);backdrop-filter:blur(14px);box-shadow:0 40px 120px rgba(0,0,0,.55)}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid rgba(238,232,220,.07);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  .live{display:flex;align-items:center;gap:10px;color:var(--ivory)}
+  .live i{width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 12px var(--gold);animation:pulse 2.2s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .panel-body{display:grid;grid-template-columns:1.25fr 1fr}
+  .map{position:relative;border-right:1px solid rgba(238,232,220,.07);min-height:300px}
+  .map svg{position:absolute;inset:0;width:100%;height:100%}
+  .rows{padding:6px 0}
+  .row{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:16px 22px;border-bottom:1px solid rgba(238,232,220,.05)}
+  .row:last-child{border-bottom:0}
+  .tail{font-family:var(--serif);font-size:22px;color:var(--warm);line-height:1}
+  .type{font-size:10px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;align-self:center;text-align:right}
+  .leg{font-size:12px;color:#cfc9bd;letter-spacing:.04em}
+  .state{font-size:10px;letter-spacing:.18em;text-transform:uppercase;text-align:right;color:var(--gold)}
+  .state.ok{color:#8fa59a}
+  .panel-foot{display:flex;gap:0;border-top:1px solid rgba(238,232,220,.07)}
+  .panel-foot div{flex:1;padding:16px 22px;border-right:1px solid rgba(238,232,220,.07)}
+  .panel-foot div:last-child{border-right:0}
+  .panel-foot b{display:block;font-family:var(--serif);font-weight:400;font-size:26px;color:var(--warm)}
+  .panel-foot small{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+
+  /* capabilities */
+  .caps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid rgba(238,232,220,.1);margin-top:70px}
+  .cap{padding:38px 36px 0 0;border-right:1px solid rgba(238,232,220,.08);margin-right:36px}
+  .cap:last-child{border-right:0;margin-right:0}
+  .cap .no{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--gold)}
+  .cap h3{font-family:var(--serif);font-weight:400;font-size:30px;color:var(--warm);margin:18px 0 14px}
+  .cap p{font-size:14px;line-height:1.8;color:#bdb7ab;max-width:300px}
+  .wide{width:100%;max-width:1180px}
+
+  /* close */
+  .close{flex-direction:column;justify-content:flex-start;text-align:center;padding-top:13vh}
+  .close .copy{max-width:760px;margin:0 auto}
+  .close .eyebrow{justify-content:center}
+  .close .btn{margin-top:46px}
+  footer{position:relative;z-index:5;display:flex;justify-content:space-between;gap:20px;padding:30px var(--gutter);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);border-top:1px solid rgba(238,232,220,.06);background:linear-gradient(transparent,rgba(5,6,8,.9))}
+
+  /* loader */
+  #loader{position:fixed;inset:0;z-index:50;background:var(--charcoal);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px}
+  #loader .mark{font-size:22px;letter-spacing:.6em;padding-left:.6em}
+  #loader .bar{width:180px;height:1px;background:rgba(238,232,220,.12);overflow:hidden}
+  #loader .bar i{display:block;height:100%;width:0;background:var(--gold);transition:width .4s ease}
+  #loader small{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted)}
+
+  .reveal{opacity:0}
+  @media (max-width:860px){
+    header{background:linear-gradient(rgba(8,9,11,.92),rgba(8,9,11,0));padding-bottom:40px}
+    section:not(.tall){padding-top:110px}
+    nav a:not(.btn){display:none}
+    .rail,.meta{display:none}
+    .shade-left{background:linear-gradient(180deg,rgba(8,9,11,.15) 0%,rgba(8,9,11,.7) 55%,rgba(8,9,11,.9) 100%)}
+    section{align-items:flex-end;padding-bottom:16vh}
+    section.tall .sticky{align-items:flex-end;padding-bottom:14vh}
+    .right .copy{margin:0}
+    .product{grid-template-columns:1fr}
+    .panel-body{grid-template-columns:1fr}
+    .map{min-height:200px;border-right:0;border-bottom:1px solid rgba(238,232,220,.07)}
+    .caps{grid-template-columns:1fr}
+    .cap{border-right:0;margin-right:0;padding:30px 0 24px;border-bottom:1px solid rgba(238,232,220,.08)}
+    .stat-row{gap:30px}
+    footer{flex-direction:column}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .grain,.cue span,.live i{animation:none}
+  }
+</style>
+</head>
+<body>
+<div id="loader"><span class="mark">PRIVESA</span><div class="bar"><i id="loadbar"></i></div><small>Preparing the hangar</small></div>
+
+<div id="stage"></div>
+<div class="veil vignette"></div>
+<div class="veil shade-left" id="shade"></div>
+<div class="veil grain"></div>
+<div class="veil" id="dim" style="background:#07080a;opacity:0"></div>
+<div class="veil" id="dip"></div>
+
+<header>
+  <a class="mark" href="#top">PRIVESA</a>
+  <nav>
+    <a href="#ch2">Platform</a>
+    <a href="#ch4">Operations</a>
+    <a href="#ch5">Owners</a>
+    <a class="btn" href="#ch6">Request access <span class="ln"></span></a>
+  </nav>
+</header>
+
+<div class="rail" id="rail">
+  <button data-to="top"><span>01</span><span class="tick"></span></button>
+  <button data-to="ch2"><span>02</span><span class="tick"></span></button>
+  <button data-to="ch3"><span>03</span><span class="tick"></span></button>
+  <button data-to="ch4"><span>04</span><span class="tick"></span></button>
+  <button data-to="ch5"><span>05</span><span class="tick"></span></button>
+  <button data-to="ch6"><span>06</span><span class="tick"></span></button>
+</div>
+<div class="meta"><span>Teterboro <b>KTEB</b></span><span>Local <b id="clock">--:--</b></span><span id="chapname">The Apron</span></div>
+
+<main id="top">
+  <section id="ch1" data-chap="The Apron">
+    <div class="copy">
+      <div class="eyebrow reveal"><i></i>Intelligence for private aviation</div>
+      <h1 class="split"><span class="line"><span>The quiet</span></span><span class="line"><span><em>command</em> of</span></span><span class="line"><span>the sky.</span></span></h1>
+      <p class="lede reveal">Privesa unifies flight operations, maintenance and owner intelligence into a single orchestration layer — so every movement of every aircraft is known before it is needed.</p>
+    </div>
+    <div class="cue reveal">Scroll<span></span></div>
+  </section>
+
+  <section id="ch2" class="tall" data-chap="The Cabin">
+    <div class="sticky">
+      <div class="copy">
+        <div class="eyebrow reveal"><i></i>01 — Orchestration</div>
+        <h2 class="split"><span class="line"><span>Every aircraft.</span></span><span class="line"><span>Every hour.</span></span><span class="line"><span><em>One view.</em></span></span></h2>
+        <p class="lede reveal">Crew duty, slots, handling, catering and owner preferences reconciled continuously — not assembled by phone the night before departure.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="ch3" class="tall" data-chap="The Powerplant">
+    <div class="sticky">
+      <div class="copy">
+        <div class="eyebrow reveal"><i></i>02 — Airworthiness</div>
+        <h2 class="split"><span class="line"><span>Intelligence,</span></span><span class="line"><span>down to the</span></span><span class="line"><span><em>turbine.</em></span></span></h2>
+        <p class="lede reveal">Maintenance tracking reads the aircraft the way your engineers do — cycles, inspections and deferred items surfaced long before they ground a trip.</p>
+        <div class="stat-row reveal">
+          <div class="stat"><b>41<small style="display:inline;margin:0 0 0 4px;font-size:14px;letter-spacing:0">hrs</small></b><small>To next A-check</small></div>
+          <div class="stat"><b>0</b><small>Open AOG items</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ch4" data-chap="The Network">
+    <div class="product">
+      <div class="copy">
+        <div class="eyebrow reveal"><i></i>03 — The platform</div>
+        <h2 class="split"><span class="line"><span>Orchestration,</span></span><span class="line"><span><em>not dashboards.</em></span></span></h2>
+        <p class="lede reveal">One calm surface for the whole fleet. Privesa decides what deserves your attention and keeps everything else quietly in order.</p>
+      </div>
+      <div class="panel reveal" id="panel">
+        <div class="panel-head"><span class="live"><i></i>Fleet · Live</span><span>06:12 UTC</span></div>
+        <div class="panel-body">
+          <div class="map">
+            <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <defs><linearGradient id="arc" x1="0" x2="1"><stop offset="0" stop-color="#c9b37e" stop-opacity=".1"/><stop offset="1" stop-color="#c9b37e"/></linearGradient></defs>
+              <g stroke="rgba(238,232,220,.05)">
+                <path d="M0 60H400M0 120H400M0 180H400M0 240H400M80 0V300M160 0V300M240 0V300M320 0V300"/>
+              </g>
+              <path class="route" d="M60 210 C 150 70, 270 60, 345 110" fill="none" stroke="url(#arc)" stroke-width="1.2"/>
+              <path class="route" d="M60 210 C 120 250, 210 250, 270 225" fill="none" stroke="rgba(201,179,126,.45)" stroke-width="1" stroke-dasharray="3 5"/>
+              <circle cx="60" cy="210" r="3" fill="#eee8dc"/><circle cx="345" cy="110" r="3" fill="#c9b37e"/><circle cx="270" cy="225" r="2.5" fill="#9c968b"/>
+              <circle id="plane" r="4" fill="#c9b37e"><animateMotion dur="9s" repeatCount="indefinite" path="M60 210 C 150 70, 270 60, 345 110"/></circle>
+              <text x="68" y="228" fill="#9c968b" font-size="9" letter-spacing="2" font-family="Montserrat">KTEB</text>
+              <text x="318" y="98" fill="#c9b37e" font-size="9" letter-spacing="2" font-family="Montserrat">EGGW</text>
+              <text x="250" y="244" fill="#9c968b" font-size="9" letter-spacing="2" font-family="Montserrat">KPBI</text>
+            </svg>
+          </div>
+          <div class="rows">
+            <div class="row"><span class="tail">N650PV</span><span class="type">G650ER</span><span class="leg">KTEB → EGGW</span><span class="state">Airborne · 06:42Z</span></div>
+            <div class="row"><span class="tail">N512PV</span><span class="type">Global 7500</span><span class="leg">Hangar 2 · KTEB</span><span class="state ok">Ready 14:00</span></div>
+            <div class="row"><span class="tail">N88PV</span><span class="type">Falcon 8X</span><span class="leg">KPBI · Crew rest</span><span class="state ok">Ready 18:30</span></div>
+          </div>
+        </div>
+        <div class="panel-foot">
+          <div><b>12</b><small>Aircraft</small></div>
+          <div><b>98.6%</b><small>Dispatch reliability</small></div>
+          <div><b>3</b><small>Decisions today</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ch5" data-chap="The Owner">
+    <div class="wide">
+      <div class="copy">
+        <div class="eyebrow reveal"><i></i>04 — Built for discretion</div>
+        <h2 class="split"><span class="line"><span>Designed for those</span></span><span class="line"><span>who <em>expect certainty.</em></span></span></h2>
+      </div>
+      <div class="caps">
+        <div class="cap reveal"><span class="no">i.</span><h3>Dispatch</h3><p>Trips planned against live crew, slot and weather constraints — with a single accountable answer.</p></div>
+        <div class="cap reveal"><span class="no">ii.</span><h3>Maintenance</h3><p>Every inspection, deferral and part tracked to the tail number, forecast weeks ahead.</p></div>
+        <div class="cap reveal"><span class="no">iii.</span><h3>Owner reporting</h3><p>Cost, utilisation and readiness, presented with the restraint an owner's time deserves.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ch6" class="close" data-chap="The Departure">
+    <div class="copy">
+      <div class="eyebrow reveal"><i></i>Private briefing</div>
+      <h2 class="split"><span class="line"><span>Your fleet, already</span></span><span class="line"><span><em>a step ahead.</em></span></span></h2>
+      <a class="btn reveal" href="#ch6">Request a private briefing <span class="ln"></span></a>
+    </div>
+  </section>
+</main>
+<footer><span>© Privesa — Concept study</span><span>Real-time 3D · Scroll choreography · Video-ready scene slots</span></footer>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { Reflector } from 'three/addons/objects/Reflector.js';
+
+const still = new URLSearchParams(location.search).has('still');
+const reduce = still || matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mobile = matchMedia('(max-width: 860px)').matches || /Mobi|Android/i.test(navigator.userAgent);
+const loadbar = document.getElementById('loadbar');
+const setLoad = v => loadbar.style.width = (v*100)+'%';
+setLoad(.15);
+
+/* ---------- renderer ---------- */
+const stage = document.getElementById('stage');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: !mobile, powerPreference: 'high-performance' });
+} catch (e) { renderer = null; }
+
+const camProxy = { px: 26, py: 2.2, pz: 15, tx: 3, ty: 2.5, tz: 0, fov: 34, light: 1 };
+
+if (renderer) {
+  renderer.setPixelRatio(Math.min(devicePixelRatio, mobile ? 1.25 : 1.75));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.82;
+  renderer.shadowMap.enabled = !mobile;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  stage.appendChild(renderer.domElement);
+}
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x07090c);
+scene.fog = new THREE.FogExp2(0x0a0e14, 0.0085);
+const camera = new THREE.PerspectiveCamera(34, innerWidth/innerHeight, 0.1, 2000);
+
+if (renderer) {
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+}
+setLoad(.3);
+
+/* ---------- helpers ---------- */
+function glowTexture(inner = 'rgba(255,240,215,1)', outer = 'rgba(255,200,140,0)') {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d'); const gr = g.createRadialGradient(64,64,0,64,64,64);
+  gr.addColorStop(0, inner); gr.addColorStop(.18, inner.replace(/[\d.]+\)$/,'0.75)')); gr.addColorStop(1, outer);
+  g.fillStyle = gr; g.fillRect(0,0,128,128);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const glowWarm = glowTexture('rgba(255,236,205,1)','rgba(255,190,120,0)');
+const glowGold = glowTexture('rgba(255,214,150,1)','rgba(230,170,90,0)');
+const glowBlue = glowTexture('rgba(150,190,255,1)','rgba(90,130,255,0)');
+const glowRed  = glowTexture('rgba(255,90,80,1)','rgba(255,40,30,0)');
+const glowGreen= glowTexture('rgba(110,255,170,1)','rgba(30,220,120,0)');
+
+function lightField(points, tex, size, opacity = 1) {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+  const mat = new THREE.PointsMaterial({ map: tex, size, sizeAttenuation: true, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending, fog: true });
+  return new THREE.Points(geo, mat);
+}
+
+/* ---------- ground ---------- */
+const groundY = 0;
+if (renderer && !mobile) {
+  const mirror = new Reflector(new THREE.PlaneGeometry(1400, 1400), { textureWidth: innerWidth*0.5, textureHeight: innerHeight*0.5, color: 0x3a3e45 });
+  mirror.rotation.x = -Math.PI/2; mirror.position.y = groundY - 0.01; scene.add(mirror);
+}
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x0c0e11, roughness: 0.62, metalness: 0.2, transparent: !mobile, opacity: mobile ? 1 : 0.9 });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1400), groundMat);
+ground.rotation.x = -Math.PI/2; ground.position.y = groundY; ground.receiveShadow = true; scene.add(ground);
+
+// apron markings (faint ivory lines)
+const markMat = new THREE.MeshBasicMaterial({ color: 0x8f8a80, transparent: true, opacity: 0.18, fog: true });
+const lead = new THREE.Mesh(new THREE.PlaneGeometry(90, 0.18), markMat);
+lead.rotation.x = -Math.PI/2; lead.position.set(10, 0.02, 0); scene.add(lead);
+const stopBar = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 4), markMat);
+stopBar.rotation.x = -Math.PI/2; stopBar.position.set(27, 0.02, 0); scene.add(stopBar);
+
+/* ---------- runway & distant lights ---------- */
+{
+  const edge = [], centre = [], approach = [], taxi = [], city = [];
+  for (let x = -700; x <= 700; x += 14) { edge.push(x, 0.25, -52, x, 0.25, -70); }
+  for (let x = -700; x <= 700; x += 7) centre.push(x, 0.08, -61);
+  for (let i = 0; i < 12; i++) for (let k = -3; k <= 3; k++) approach.push(720 + i*16, 0.4, -61 + k*1.6);
+  for (let z = -8; z >= -50; z -= 5) { taxi.push(34, 0.18, z, 44, 0.18, z); }
+  for (let x = -40; x <= 34; x += 6) { taxi.push(x, 0.18, -10); }
+  for (let i = 0; i < 900; i++) { const a = Math.random()*Math.PI - Math.PI; const r = 420 + Math.random()*420; city.push(Math.cos(a)*r, 0.5 + Math.random()*6, Math.sin(a)*r*0.9 - 120); }
+  scene.add(lightField(edge, glowWarm, 4.2));
+  scene.add(lightField(centre, glowWarm, 2.0, .6));
+  scene.add(lightField(approach, glowGold, 3.2));
+  scene.add(lightField(taxi, glowBlue, 2.2, .9));
+  scene.add(lightField(city, glowGold, 6, .55));
+}
+// horizon glow
+{
+  const c = document.createElement('canvas'); c.width = 4; c.height = 256;
+  const g = c.getContext('2d'); const gr = g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(.62,'rgba(40,52,74,.55)'); gr.addColorStop(.8,'rgba(120,96,66,.35)'); gr.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0,0,4,256);
+  const t = new THREE.CanvasTexture(c);
+  const sky = new THREE.Mesh(new THREE.CylinderGeometry(900, 900, 260, 64, 1, true), new THREE.MeshBasicMaterial({ map: t, transparent: true, side: THREE.BackSide, depthWrite: false, fog: false }));
+  sky.position.y = 60; scene.add(sky);
+}
+
+/* ---------- hangar ---------- */
+const hangar = new THREE.Group(); scene.add(hangar);
+{
+  const shell = new THREE.MeshStandardMaterial({ color: 0x15171b, roughness: .85, metalness: .3 });
+  const W = 46, H = 17, D = 52, X0 = -30;
+  const back = new THREE.Mesh(new THREE.BoxGeometry(1, H, D), shell); back.position.set(X0 - D + 0.5 + 24, H/2, 0);
+  const left = new THREE.Mesh(new THREE.BoxGeometry(D, H, 1), shell); left.position.set(X0 - D/2, H/2, -W/2);
+  const right = left.clone(); right.position.z = W/2;
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(D + 2, 1.2, W + 2), shell); roof.position.set(X0 - D/2, H + 0.6, 0);
+  const header = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3, W + 2), shell); header.position.set(X0, H - 1.5, 0);
+  back.position.x = X0 - D;
+  [back, left, right, roof, header].forEach(m => { m.castShadow = m.receiveShadow = true; hangar.add(m); });
+  // interior warm wall + light strips
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(W - 2, H - 1), new THREE.MeshBasicMaterial({ color: 0x2a2219, fog: true }));
+  wall.position.set(X0 - D + 0.6, H/2, 0); wall.rotation.y = Math.PI/2; hangar.add(wall);
+  const stripMat = new THREE.MeshBasicMaterial({ color: 0xffe2b8 });
+  for (let i = 0; i < 6; i++) { const s = new THREE.Mesh(new THREE.BoxGeometry(D - 6, 0.12, 0.5), stripMat); s.position.set(X0 - D/2, H - 0.3, -18 + i*7.2); hangar.add(s); }
+  // light beams
+  const beamMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    uniforms: { uColor: { value: new THREE.Color(0xffd6a0) }, uStrength: { value: 0.07 } },
+    vertexShader: `varying float vY; varying vec3 vN; varying vec3 vV; void main(){ vY = position.y; vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }`,
+    fragmentShader: `uniform vec3 uColor; uniform float uStrength; varying float vY; varying vec3 vN; varying vec3 vV; void main(){ float h = smoothstep(-8.,8.,vY); float rim = pow(abs(dot(vN,vV)),1.6); gl_FragColor = vec4(uColor, uStrength*h*rim); }`
+  });
+  for (let i = 0; i < 3; i++) {
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 6.5, 16, 32, 1, true), beamMat);
+    beam.position.set(X0 - 10 - i*12, 8, 0); hangar.add(beam);
+  }
+  // door spill glow on ground
+  const spill = new THREE.Mesh(new THREE.PlaneGeometry(40, 46), new THREE.MeshBasicMaterial({ map: glowWarm, transparent: true, opacity: .16, depthWrite: false, blending: THREE.AdditiveBlending }));
+  spill.rotation.x = -Math.PI/2; spill.position.set(X0 + 6, 0.03, 0); hangar.add(spill);
+}
+
+/* ---------- the aircraft ---------- */
+const jet = new THREE.Group(); scene.add(jet);
+const L = 22, R = 1.32, CY = 2.62; // length, fuselage radius, centreline height
+
+function fuselageRadius(x) {
+  if (x <= 6) { const t = x/6; return 0.12 + (R - 0.12) * Math.sin(t*Math.PI/2) ** 1.25; }
+  if (x <= 17.2) return R;
+  const t = (x - 17.2) / (L - 17.2); return R * Math.sqrt(Math.max(0, 1 - t ** 2.15));
+}
+function liftAt(x) { return (x < 6 ? 0.045 * (6 - x) ** 2 : 0) - (x > 18.5 ? 0.035 * (x - 18.5) ** 2 : 0); }
+
+// livery texture: ivory + champagne cheat lines (u wraps circumference, v runs tail → nose)
+const livery = (() => {
+  const c = document.createElement('canvas'); c.width = 2048; c.height = 1024; const g = c.getContext('2d');
+  g.fillStyle = '#e3ddd1'; g.fillRect(0,0,2048,1024);
+  const a = 0.21 / (Math.PI*2);
+  const lines = [a, 0.5 - a];
+  g.fillStyle = '#b89c62';
+  lines.forEach(u => { g.fillRect(u*2048 - 5, 1024*0.14, 10, 1024*0.68); g.fillRect(u*2048 - 14 + (u < .25 ? 22 : -22), 1024*0.14, 3, 1024*0.62); });
+  // subtle belly tone
+  const belly = g.createLinearGradient(0,0,2048,0);
+  belly.addColorStop(.18,'rgba(0,0,0,0)'); belly.addColorStop(.25,'rgba(80,72,60,.10)'); belly.addColorStop(.32,'rgba(0,0,0,0)');
+  g.fillStyle = belly; g.fillRect(0,0,2048,1024);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+})();
+// texture v must map along the lathe profile; we build the lathe so v = x / L
+const paint = new THREE.MeshPhysicalMaterial({ map: livery, roughness: 0.34, metalness: 0.1, clearcoat: 0.55, clearcoatRoughness: 0.18, envMapIntensity: 0.28 });
+const metal = new THREE.MeshStandardMaterial({ color: 0xcfd3d8, roughness: 0.18, metalness: 1, envMapIntensity: 0.7 });
+const darkMetal = new THREE.MeshStandardMaterial({ color: 0x1b1d21, roughness: 0.45, metalness: 0.8 });
+const glass = new THREE.MeshPhysicalMaterial({ color: 0x07090c, roughness: 0.05, metalness: 0.6, clearcoat: 1, envMapIntensity: 1.6 });
+const rubber = new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.9 });
+
+function bendGeometry(geo) {
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) { p.setY(i, p.getY(i) + liftAt(p.getX(i))); }
+  geo.computeVertexNormals(); return geo;
+}
+
+// fuselage
+{
+  const pts = []; const N = 90;
+  for (let i = 0; i <= N; i++) { const x = (i/N) * L; pts.push(new THREE.Vector2(Math.max(0.001, fuselageRadius(x)), x)); }
+  const geo = new THREE.LatheGeometry(pts, 96);
+  geo.rotateZ(-Math.PI/2); // lathe axis Y → +X (nose)
+  bendGeometry(geo);
+  const m = new THREE.Mesh(geo, paint); m.position.y = CY; m.castShadow = true; m.receiveShadow = true; jet.add(m);
+
+  // windshield: a partial lathe band on the upper nose
+  const wpts = []; for (let i = 0; i <= 20; i++) { const x = 18.55 + i*0.075; wpts.push(new THREE.Vector2(fuselageRadius(x)*1.006, x)); }
+  const wgeo = new THREE.LatheGeometry(wpts, 40, Math.PI*1.5 - 0.78, 1.56);
+  wgeo.rotateZ(-Math.PI/2); bendGeometry(wgeo);
+  const ws = new THREE.Mesh(wgeo, glass); ws.position.y = CY + 0.06; jet.add(ws);
+}
+
+// cabin windows (warm, glowing)
+const cabinGlow = new THREE.MeshBasicMaterial({ color: 0xc89a5c });
+{
+  const shape = new THREE.Shape(); shape.absellipse(0, 0, 0.19, 0.25, 0, Math.PI*2);
+  const g = new THREE.ShapeGeometry(shape, 24);
+  for (let i = 0; i < 7; i++) {
+    const x = 8.4 + i * 1.12;
+    [1, -1].forEach(s => {
+      const w = new THREE.Mesh(g, cabinGlow);
+      const r = fuselageRadius(x);
+      w.position.set(x, CY + 0.32 + liftAt(x), s * Math.sqrt(r*r - 0.32*0.32) + s*0.012);
+      if (s < 0) w.rotation.y = Math.PI;
+      jet.add(w);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowWarm, transparent: true, opacity: .28, depthWrite: false, blending: THREE.AdditiveBlending }));
+      halo.scale.set(0.55, 0.55, 1); halo.position.copy(w.position); halo.position.z += s*0.05; jet.add(halo);
+    });
+  }
+  // main door outline (starboard / +z)
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 1.65), new THREE.MeshBasicMaterial({ color: 0x5a564e, transparent: true, opacity: .35 }));
+  door.position.set(17.0, CY - 0.05 + liftAt(17), R + 0.004); jet.add(door);
+}
+
+// wings
+function planform(points, depth, mat) {
+  const s = new THREE.Shape(); points.forEach(([x, y], i) => i ? s.lineTo(x, y) : s.moveTo(x, y)); s.closePath();
+  const geo = new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelThickness: depth*0.45, bevelSize: depth*0.45, bevelSegments: 4, curveSegments: 4 });
+  geo.translate(0, 0, -depth/2);
+  return new THREE.Mesh(geo, mat);
+}
+[1, -1].forEach(s => {
+  const wing = planform([[13.2, 0], [8.4, 0], [6.5, 9.6], [7.85, 9.6]], 0.14, paint);
+  wing.rotation.x = s > 0 ? Math.PI/2 : -Math.PI/2; // span → ±z
+  wing.position.set(0, CY - 0.82, 0);
+  wing.rotation.z = 0;
+  const holder = new THREE.Group(); holder.add(wing); holder.rotation.x = s * -0.055; // dihedral
+  wing.castShadow = true; wing.receiveShadow = true; jet.add(holder);
+  // winglet
+  const wl = planform([[7.85, 0], [6.5, 0], [5.6, 1.7], [6.35, 1.7]], 0.09, paint);
+  wl.position.set(0, CY - 0.82, s * 9.55); wl.rotation.x = s * 0.18; wl.castShadow = true; holder.add(wl);
+  // nav light
+  const nav = new THREE.Sprite(new THREE.SpriteMaterial({ map: s > 0 ? glowGreen : glowRed, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  nav.scale.set(1.4, 1.4, 1); nav.position.set(6.9, CY - 0.82 + 0.55, s * 9.55); holder.add(nav);
+  // wing root fairing
+  const fair = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), paint);
+  fair.scale.set(3.4, 0.55, 1.35); fair.position.set(10.6, CY - 0.85, 0); jet.add(fair);
+});
+
+// tail: vertical fin + T-tail stabiliser
+{
+  const fin = planform([[4.8, 0], [0.9, 0], [-1.05, 4.3], [1.25, 4.3]], 0.16, paint);
+  fin.position.set(0, CY + 0.55, 0); fin.castShadow = true; jet.add(fin);
+  [1, -1].forEach(s => {
+    const st = planform([[1.75, 0], [-0.95, 0], [-1.85, 3.7], [-0.75, 3.7]], 0.1, paint);
+    st.rotation.x = s > 0 ? Math.PI/2 : -Math.PI/2; st.position.set(0, CY + 4.85, 0); st.castShadow = true; jet.add(st);
+  });
+  const strobe = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowWarm, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+  strobe.scale.set(2.2, 2.2, 1); strobe.position.set(-1.7, CY + 4.95, 0); jet.add(strobe); jet.userData.strobe = strobe;
+}
+
+// engines (rear fuselage mounted)
+const fans = [];
+[1, -1].forEach(s => {
+  const eng = new THREE.Group(); eng.position.set(0, CY + 0.78, s * 2.32); jet.add(eng);
+  const prof = [];
+  const x0 = 2.4, x1 = 7.25;
+  const rr = t => 0.5 + 0.2 * Math.sin(Math.min(1, t * 1.25) * Math.PI * 0.62);
+  for (let i = 0; i <= 40; i++) { const t = i/40; prof.push(new THREE.Vector2(rr(t), x0 + t*(x1 - x0))); }
+  const ng = new THREE.LatheGeometry(prof, 64); ng.rotateZ(-Math.PI/2);
+  const nac = new THREE.Mesh(ng, paint); nac.castShadow = true; eng.add(nac);
+  // chrome intake lip
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(rr(1) - 0.035, 0.05, 16, 72), metal); lip.rotation.y = Math.PI/2; lip.position.x = x1; eng.add(lip);
+  // dark inner duct
+  const duct = new THREE.Mesh(new THREE.CylinderGeometry(rr(1) - 0.07, rr(1) - 0.09, 0.9, 64, 1, true), darkMetal);
+  duct.rotation.z = Math.PI/2; duct.position.x = x1 - 0.45; eng.add(duct);
+  // fan
+  const fan = new THREE.Group(); fan.position.x = x1 - 0.55; eng.add(fan); fans.push(fan);
+  const spinner = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.42, 48), metal); spinner.rotation.z = -Math.PI/2; spinner.position.x = 0.21; fan.add(spinner);
+  const bladeGeo = new THREE.BoxGeometry(0.03, 0.46, 0.11); bladeGeo.translate(0, 0.33, 0);
+  for (let i = 0; i < 22; i++) { const b = new THREE.Mesh(bladeGeo, metal); b.rotation.x = (i/22) * Math.PI*2; b.rotateY(0.55); fan.add(b); }
+  const back = new THREE.Mesh(new THREE.CircleGeometry(rr(1) - 0.08, 48), new THREE.MeshBasicMaterial({ color: 0x050505 })); back.rotation.y = Math.PI/2; back.position.x = x1 - 0.85; eng.add(back);
+  // exhaust
+  const ex = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 0.5, 48, 1, true), darkMetal); ex.rotation.z = Math.PI/2; ex.position.x = x0 - 0.1; eng.add(ex);
+  // pylon
+  const py = planform([[6.0, 0], [3.2, 0], [3.6, 1.35], [5.6, 1.35]], 0.22, paint);
+  py.rotation.x = s > 0 ? Math.PI/2 : -Math.PI/2; py.position.set(0, -0.05, -s*1.35); eng.add(py);
+});
+
+// landing gear
+function gear(x, z, wheels) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); jet.add(g);
+  const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, CY - 0.75, 16), metal); strut.position.y = (CY - 0.75)/2 + 0.38; g.add(strut);
+  for (let i = 0; i < wheels; i++) {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.24, 32), rubber); w.rotation.x = Math.PI/2; w.position.set(0, 0.38, (i - (wheels-1)/2) * 0.32); w.castShadow = true; g.add(w);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.25, 24), metal); hub.rotation.x = Math.PI/2; hub.position.copy(w.position); g.add(hub);
+  }
+}
+gear(19.0, 0, 2); gear(10.4, 2.1, 2); gear(10.4, -2.1, 2);
+
+/* ---------- lights ---------- */
+scene.add(new THREE.HemisphereLight(0x22304a, 0x050506, 0.35));
+const key = new THREE.SpotLight(0xffd9ad, 1.7, 120, 0.62, 0.55, 0);
+key.position.set(-22, 14, 10); key.target.position.set(9, 1.5, 0); scene.add(key, key.target);
+key.castShadow = !mobile; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.radius = 6;
+const rim = new THREE.SpotLight(0x9fb6de, 2.0, 140, 0.5, 0.7, 0);
+rim.position.set(18, 16, -26); rim.target.position.set(8, 2, 0); scene.add(rim, rim.target);
+const front = new THREE.SpotLight(0xfff1dc, 0.35, 80, 0.4, 0.8, 0);
+front.position.set(40, 7, 12); front.target.position.set(12, 2.5, 0); scene.add(front, front.target);
+const engineKiss = new THREE.PointLight(0xffe2bb, 1.4, 9, 0); engineKiss.position.set(9.5, 4.8, 4.6); scene.add(engineKiss);
+setLoad(.65);
+
+/* ---------- post ---------- */
+let composer = null, bloom;
+if (renderer) {
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), mobile ? 0.45 : 0.55, 0.55, 0.82);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+}
+
+/* ---------- camera choreography ---------- */
+const portrait = innerWidth < innerHeight;
+const shots = {
+  apron:  { px: 38,  py: 3.4, pz: 29,  tx: 0.5, ty: 3.2,  tz: -2, fov: 32 },
+  cabin:  { px: 21.5, py: 3.3, pz: 21, tx: 10.4, ty: 2.85, tz: 1.2, fov: 30 },
+  cabin2: { px: 14.5, py: 3.3, pz: 20.5, tx: 3.4, ty: 2.85, tz: 1.2, fov: 30 },
+  engine: { px: 11.4, py: 3.75, pz: 4.75, tx: 6.04, ty: 3.4, tz: 4.07, fov: 30 },
+  engine2:{ px: 10.2, py: 3.6, pz: 4.3, tx: 5.95, ty: 3.4, tz: 3.78, fov: 28 },
+  aerial: { px: 8,   py: 46,  pz: 34,  tx: -2, ty: 0,    tz: -14, fov: 38 },
+  owner:  { px: -6,  py: 9.5, pz: 30,  tx: 4,  ty: 2.6,  tz: 0, fov: 30 },
+  depart: { px: 40,  py: 1.1, pz: 0.6, tx: 0,  ty: 7.4,  tz: 0, fov: 30 }
+};
+if (portrait) Object.assign(shots, {
+  apron:  { px: 40, py: 4.2, pz: 34, tx: 11, ty: -4.2, tz: 0, fov: 50 },
+  cabin:  { px: 24, py: 3.6, pz: 25, tx: 11, ty: -3.4, tz: 0, fov: 46 },
+  cabin2: { px: 16, py: 3.6, pz: 24, tx: 4,  ty: -3.4, tz: 0, fov: 46 },
+  engine: { px: 13.4, py: 3.6, pz: 6.2, tx: 7, ty: 1.0, tz: 2.3, fov: 50 },
+  engine2:{ px: 12.4, py: 3.5, pz: 5.8, tx: 7, ty: 1.0, tz: 2.3, fov: 48 },
+  aerial: { ...shots.aerial, fov: 56 },
+  owner:  { ...shots.owner, ty: 0.4, fov: 48 },
+  depart: { ...shots.depart, ty: 6.2, fov: 48 }
+});
+Object.assign(camProxy, shots.apron);
+
+const lenis = (reduce || still) ? null : new Lenis({ duration: 1.25, smoothWheel: true });
+gsap.registerPlugin(ScrollTrigger);
+gsap.ticker.lagSmoothing(0);
+if (lenis) { lenis.on('scroll', ScrollTrigger.update); gsap.ticker.add(t => lenis.raf(t * 1000)); }
+
+function shotTween(sel, to, opts = {}) {
+  return gsap.to(camProxy, { ...shots[to], ease: opts.ease || 'power1.inOut', scrollTrigger: { trigger: sel, start: opts.start || 'top bottom', end: opts.end || 'top top', scrub: true } });
+}
+shotTween('#ch2', 'cabin');
+gsap.to(camProxy, { ...shots.cabin2, ease: 'none', scrollTrigger: { trigger: '#ch2', start: 'top top', end: 'bottom bottom', scrub: true } });
+shotTween('#ch3', 'engine');
+gsap.to(camProxy, { ...shots.engine2, ease: 'none', scrollTrigger: { trigger: '#ch3', start: 'top top', end: 'bottom bottom', scrub: true } });
+shotTween('#ch4', 'aerial', { ease: 'power2.inOut' });
+shotTween('#ch5', 'owner');
+shotTween('#ch6', 'depart');
+
+// cinematic dip-to-black on the big cut (engine → aerial)
+const dip = document.getElementById('dip');
+gsap.timeline({ scrollTrigger: { trigger: '#ch4', start: 'top 95%', end: 'top 15%', scrub: true } })
+  .to(dip, { opacity: 0.96, duration: 0.45, ease: 'power2.in' })
+  .to(dip, { opacity: 0, duration: 0.55, ease: 'power2.out' });
+
+// deeper dim for text-heavy chapters
+const dimEl = document.getElementById('dim');
+gsap.to(dimEl, { opacity: 0.55, ease: 'none', scrollTrigger: { trigger: '#ch5', start: 'top 80%', end: 'top 20%', scrub: true } });
+gsap.fromTo(dimEl, { opacity: 0.55 }, { opacity: 0.2, ease: 'none', immediateRender: false, scrollTrigger: { trigger: '#ch6', start: 'top 80%', end: 'top 20%', scrub: true } });
+
+// text shade only where copy sits on the left
+const shade = document.getElementById('shade');
+ScrollTrigger.create({ trigger: '#ch6', start: 'top 60%', onToggle: s => shade.style.opacity = s.isActive ? 0.3 : 1 });
+
+// copy reveals
+document.querySelectorAll('section').forEach(sec => {
+  const lines = sec.querySelectorAll('.split .line > span');
+  const fades = sec.querySelectorAll('.reveal');
+  gsap.set(lines, { yPercent: 105 });
+  const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } })
+    .to(lines, { yPercent: 0, duration: 1.3, stagger: 0.09 })
+    .to(fades, { opacity: 1, y: 0, duration: 1.1, stagger: 0.08 }, '-=0.95');
+  gsap.set(fades, { y: 18 });
+  ScrollTrigger.create({ trigger: sec, start: 'top 62%', onEnter: () => tl.play(), onEnterBack: () => tl.play() });
+  sec._tl = tl;
+});
+
+// chapter rail + meta
+const rail = [...document.querySelectorAll('#rail button')];
+const chapName = document.getElementById('chapname');
+document.querySelectorAll('section').forEach((sec, i) => {
+  ScrollTrigger.create({ trigger: sec, start: 'top 50%', end: 'bottom 50%', onToggle: s => { if (s.isActive) { rail.forEach((b, j) => b.classList.toggle('on', i === j)); chapName.textContent = sec.dataset.chap; } } });
+});
+rail.forEach(b => b.addEventListener('click', () => { const t = document.getElementById(b.dataset.to); lenis ? lenis.scrollTo(t, { duration: 2.2 }) : t.scrollIntoView({ behavior: 'smooth' }); }));
+document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => { const t = document.querySelector(a.getAttribute('href')); if (!t) return; e.preventDefault(); lenis ? lenis.scrollTo(t, { duration: 2.2 }) : t.scrollIntoView({ behavior: 'smooth' }); }));
+const clock = document.getElementById('clock');
+const tick = () => clock.textContent = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/New_York' });
+tick(); setInterval(tick, 30000);
+
+/* ---------- loop ---------- */
+const cam = { p: new THREE.Vector3(camProxy.px, camProxy.py, camProxy.pz), t: new THREE.Vector3(camProxy.tx, camProxy.ty, camProxy.tz) };
+const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
+addEventListener('pointermove', e => { pointer.x = e.clientX / innerWidth - .5; pointer.y = e.clientY / innerHeight - .5; });
+const clockT = new THREE.Clock();
+let running = true;
+document.addEventListener('visibilitychange', () => running = !document.hidden);
+
+function frame() {
+  requestAnimationFrame(frame);
+  if (!renderer || !running) return;
+  const t = clockT.getElapsedTime(), dt = Math.min(clockT.getDelta(), 0.05);
+  const k = reduce ? 1 : 0.075;
+  pointer.sx += (pointer.x - pointer.sx) * 0.04; pointer.sy += (pointer.y - pointer.sy) * 0.04;
+  const breathe = reduce ? 0 : 1;
+  cam.p.lerp(new THREE.Vector3(
+    camProxy.px + Math.sin(t*0.17)*0.25*breathe + pointer.sx*0.9*breathe,
+    camProxy.py + Math.sin(t*0.23)*0.08*breathe - pointer.sy*0.35*breathe,
+    camProxy.pz + Math.cos(t*0.13)*0.22*breathe), k);
+  cam.t.lerp(new THREE.Vector3(camProxy.tx, camProxy.ty, camProxy.tz), k);
+  camera.position.copy(cam.p); camera.lookAt(cam.t);
+  if (Math.abs(camera.fov - camProxy.fov) > 0.01) { camera.fov += (camProxy.fov - camera.fov) * k; camera.updateProjectionMatrix(); }
+  if (!reduce) fans.forEach(f => f.rotation.x += 0.35 * (1/60));
+  const st = jet.userData.strobe; st.material.opacity = (t % 1.6) < 0.08 ? 1 : 0;
+  composer ? composer.render() : renderer.render(scene, camera);
+}
+
+function resize() {
+  if (!renderer) return;
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); composer?.setSize(innerWidth, innerHeight);
+}
+addEventListener('resize', resize);
+
+/* ---------- start ---------- */
+setLoad(.85);
+requestAnimationFrame(() => {
+  if (renderer) { renderer.compile(scene, camera); composer.render(); }
+  setLoad(1);
+  document.fonts.ready.then(() => {
+    gsap.to('#loader', { opacity: 0, duration: 1.1, delay: 0.35, ease: 'power2.inOut', onComplete: () => document.getElementById('loader')?.remove() });
+    gsap.delayedCall(0.6, () => document.querySelector('#ch1')._tl.play());
+    ScrollTrigger.refresh();
+    window.__ready = true;
+  });
+  frame();
+});
+</script>
+</body>
+</html>
